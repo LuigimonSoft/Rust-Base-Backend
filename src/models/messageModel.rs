@@ -6,9 +6,9 @@ pub struct MessageModel {
   pub content: String
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct CreateMessageModelDto{
-  pub content:String
+  pub content:Option<String>
 }
 
 #[derive(Debug, Serialize)]
