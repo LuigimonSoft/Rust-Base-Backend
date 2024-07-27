@@ -26,7 +26,7 @@ impl<R: BaseRepository + Send + Sync> BaseService for BaseServiceImpl<R> {
   }
 
   async fn create_message(&self, dto:CreateMessageModelDto) -> MessageModel {
-    self.repository.add_message(dto.content).await
+    self.repository.add_message(dto.content.clone().unwrap_or("".to_string())).await
   }
 
   async fn search_messages(&self, query: &str) -> Vec<MessageModel> {
