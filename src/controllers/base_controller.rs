@@ -40,7 +40,7 @@ pub fn routes(&self) -> impl Filter<Extract = impl warp::Reply, Error = Infallib
         .and(api_path.clone())
         .and(warp::path("messages"))
         .and(warp::path::end())
-        .and(crate::middleware::validator::validate_create_message())
+        .and(crate::validators::base_validator::validate_create_message())
         .and(with_service(Arc::clone(&service)))
         .and_then(handle_create_message);
 

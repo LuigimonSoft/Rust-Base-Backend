@@ -9,7 +9,7 @@ mod services;
 mod controllers;
 mod errors;
 mod middleware;
-
+mod validators;
 
 
 #[tokio::main]
