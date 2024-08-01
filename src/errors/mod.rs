@@ -2,10 +2,8 @@ pub mod error_codes;
 
 use std::convert::Infallible;
 use thiserror::Error;
-use tokio::sync::broadcast::error;
 use warp::{http::StatusCode, reject::Reject, Rejection, Reply};
 use serde::Serialize;
-use crate::models::messageModel::CreateMessageModelDto;
 use crate::errors::error_codes::ERROR_CODES;
 use crate::errors::error_codes::ErrorCodes;
 
@@ -18,45 +16,68 @@ pub enum ApiError {
   #[error("Internal server error")]
   InternalServerError,
   #[error("custom")]
-  ErrorCode(ErrorCodes)
+  ErrorCode(ErrorCodes),
+  #[error("Multiple validation errors")]
+  MultipleErrors(Option<Vec<ErrorCodes>>)
 }
 
 impl Reject for ApiError {}
 
 #[derive(Serialize)]
 pub struct ErrorResponse {
-  pub code:u16,
-  pub message: String,
-  pub details: Option<Vec<String>>
+  pub title:String,
+  pub status:u16,
+  pub instance: Option<String>,
+  pub details: Option<Vec<ValidationProblem>>
+}
+
+#[derive(Debug, Serialize)]
+pub struct ValidationProblem {
+    field: Option<String>,
+    message: String,
+    error_code: u16,
 }
 
 pub async fn handle_rejection(err: Rejection) -> Result<impl Reply, Infallible> {
   let dict = ERROR_CODES.read().unwrap();
-  let (status_code, code, message) = if err.is_not_found() {
-    (StatusCode::NOT_FOUND, 404, "Not Found".to_string())
+  let errors: ErrorResponse = if err.is_not_found() {
+    ErrorResponse { title: "Not Found".to_string(), status: StatusCode::NOT_FOUND.as_u16(), instance: None, details: None}
   } else if let Some(e) = err.find::<ApiError>() {
     match  e {
-      ApiError::NotFound => (StatusCode::NOT_FOUND, 404, e.to_string()),
-      ApiError::BadRequest(details, code) => (StatusCode::BAD_REQUEST, code.clone(), details.clone()),
-      ApiError::InternalServerError => (StatusCode::INTERNAL_SERVER_ERROR, 500, e.to_string()),
+      ApiError::NotFound => ErrorResponse { title: e.to_string(), status: StatusCode::NOT_FOUND.as_u16(), instance: None, details: None},
+      ApiError::BadRequest(details, code) => ErrorResponse { title: "Bad request".to_string(), status: StatusCode::BAD_REQUEST.as_u16(), instance: None, details: Some(vec![ValidationProblem {field: None, message: details.clone(), error_code: code.clone()}])},
+      ApiError::InternalServerError => ErrorResponse { title: "Internal server error".to_string(), status: StatusCode::INTERNAL_SERVER_ERROR.as_u16(), instance: None, details: Some(vec![ValidationProblem {field: None, message: e.to_string(), error_code: 0}])},
       ApiError::ErrorCode(code) => {
         if let Some(errorcode) = dict.get(code){
-          (errorcode.status_code, errorcode.code, errorcode.message.to_string())
+          ErrorResponse { title: errorcode.message.clone(), status: errorcode.status_code.as_u16(), instance: None, details: Some(vec![ValidationProblem {field: None, message: errorcode.message.clone(), error_code: errorcode.code}])}//(errorcode.status_code, errorcode.code, errorcode.message.to_string())
         } else {
-          (StatusCode::INTERNAL_SERVER_ERROR, 500, e.to_string())
+          ErrorResponse { title: "Internal server error".to_string(), status: StatusCode::INTERNAL_SERVER_ERROR.as_u16(), instance: None, details: Some(vec![ValidationProblem {field: None, message: e.to_string(), error_code: 0}])}
+        }  
+      },
+      ApiError::MultipleErrors(errors) => {
+        let mut validation_problems: Option<Vec<ValidationProblem>> = Some(vec![]);
+        if let Some(error_list) = errors {
+        for code in error_list {
+          if let Some(errorcode) = dict.get(code){
+            if let Some(ref mut problems) = validation_problems {
+              problems.push(ValidationProblem {field: None, message: errorcode.message.clone(), error_code: errorcode.code});
+            }
+          }
         }
-        
+      }
+        ErrorResponse { title: e.to_string(), status: StatusCode::NOT_FOUND.as_u16(), instance: None, details: validation_problems}
       }
     }
    } else {
-      (StatusCode::INTERNAL_SERVER_ERROR, 500, "Internal Server Error".to_string())        
+      ErrorResponse { title: "Internal server error".to_string(), status: StatusCode::INTERNAL_SERVER_ERROR.as_u16(), instance: None, details: None}       
    };
 
-   let json = warp::reply::json(&ErrorResponse {
-    code,
-    message: message,
-    details: None
-   });
+   let json = warp::reply::json(&errors);
+   let res_status_code: StatusCode;
+   match StatusCode::from_u16(errors.status) {
+    Ok(status_code)=> {res_status_code = status_code},
+    Err(_)=> {res_status_code = StatusCode::INTERNAL_SERVER_ERROR}
+   }
 
-   Ok(warp::reply::with_status(json, status_code))
+   Ok(warp::reply::with_status(json, res_status_code))
 }
