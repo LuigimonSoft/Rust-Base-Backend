@@ -23,6 +23,7 @@ pub fn routes(&self) -> impl Filter<Extract = impl warp::Reply, Error = Infallib
     let service = self.service.clone();
     let api_base = self.config.api_base.trim_matches('/').to_string();
     let api_segments: Vec<String> = api_base.split('/').map(|s| s.to_string()).collect();
+    let api_path_complete: String = api_base.clone() + ("/messages");
 
     let mut api_path = warp::path(api_segments[0].clone()).boxed();
     for segment in &api_segments[1..] {
@@ -40,7 +41,7 @@ pub fn routes(&self) -> impl Filter<Extract = impl warp::Reply, Error = Infallib
         .and(api_path.clone())
         .and(warp::path("messages"))
         .and(warp::path::end())
-        .and(crate::validators::base_validator::validate_create_message())
+        .and(crate::validators::base_validator::validate_create_message(Some(api_path_complete.clone())))
         .and(with_service(Arc::clone(&service)))
         .and_then(handle_create_message);
 

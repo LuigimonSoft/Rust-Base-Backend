@@ -18,7 +18,7 @@ pub enum ApiError {
   #[error("custom")]
   ErrorCode(ErrorCodes),
   #[error("Multiple validation errors")]
-  MultipleErrors(Option<Vec<ErrorCodes>>)
+  MultipleErrors(Option<Vec<ErrorCodes>>, Option<String>, Option<String>)
 }
 
 impl Reject for ApiError {}
@@ -54,18 +54,18 @@ pub async fn handle_rejection(err: Rejection) -> Result<impl Reply, Infallible> 
           ErrorResponse { title: "Internal server error".to_string(), status: StatusCode::INTERNAL_SERVER_ERROR.as_u16(), instance: None, details: Some(vec![ValidationProblem {field: None, message: e.to_string(), error_code: 0}])}
         }  
       },
-      ApiError::MultipleErrors(errors) => {
+      ApiError::MultipleErrors(errors, field, instance) => {
         let mut validation_problems: Option<Vec<ValidationProblem>> = Some(vec![]);
         if let Some(error_list) = errors {
         for code in error_list {
           if let Some(errorcode) = dict.get(code){
             if let Some(ref mut problems) = validation_problems {
-              problems.push(ValidationProblem {field: None, message: errorcode.message.clone(), error_code: errorcode.code});
+              problems.push(ValidationProblem {field: field.clone(), message: errorcode.message.clone(), error_code: errorcode.code});
             }
           }
         }
       }
-        ErrorResponse { title: e.to_string(), status: StatusCode::NOT_FOUND.as_u16(), instance: None, details: validation_problems}
+        ErrorResponse { title: e.to_string(), status: StatusCode::NOT_FOUND.as_u16(), instance: instance.clone(), details: validation_problems}
       }
     }
    } else {

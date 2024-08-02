@@ -15,7 +15,9 @@ enum ValidationRule<T> {
 
 pub struct Rule<'a, T> {
     value: Option<&'a T>,
-    rules: Vec<RuleItem<T>>
+    rules: Vec<RuleItem<T>>,
+    instance: Option<String>,
+    field: Option<String>
 }
 
 pub struct RuleItem<T> {
@@ -41,10 +43,12 @@ impl<'a, T> Rule<'a, T>
 where
     T: Validation + PartialOrd,
 {
-    pub fn new(value: Option<&'a T>) -> Self {
+    pub fn new(value: Option<&'a T>, field:Option<String>, instance: Option<String>) -> Self {//,field: Option<String>, instance: Option<String> ) -> Self {
         Rule {
             value,
-            rules: Vec::new()
+            rules: Vec::new(),
+            instance,
+            field
         }
     }
 
@@ -52,6 +56,16 @@ where
         if let Some(rule ) = self.rules.last_mut() {
             rule.error_code = Some(error_code);
         }
+        self
+    }
+
+    pub fn set_instance(mut self, instance: Option<String>) -> Self {
+        self.instance = instance;
+        self
+    }
+
+    pub fn field_name(mut self, field: Option<String>) -> Self {
+        self.field = field;
         self
     }
 
@@ -123,7 +137,7 @@ where
             if error_list.is_empty() {
                 Ok(self.value)
             } else {
-                Err(warp::reject::custom(ApiError::MultipleErrors(errors)))
+                Err(warp::reject::custom(ApiError::MultipleErrors(errors, self.field.clone(), self.instance.clone())))
             }
         } else {
             Err(warp::reject::custom(ApiError::ErrorCode(ErrorCodes::Nodeclared)))
