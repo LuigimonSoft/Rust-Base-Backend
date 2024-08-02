@@ -8,7 +8,7 @@ pub fn validate_create_message(path:Option<String>) -> impl Filter<Extract = (Cr
     warp::body::json()
         .and(path)
         .and_then(|body: CreateMessageModelDto, path: Option<String>| async move {
-          match Rule::new(body.content.as_ref(),Some("content".to_string()), path)
+          let content_validation = match Rule::new(body.content.as_ref(),Some("content".to_string()), path)
                 .not_null()
                 .with_error_code(ErrorCodes::NotNull)
                 .not_empty()
@@ -17,7 +17,11 @@ pub fn validate_create_message(path:Option<String>) -> impl Filter<Extract = (Cr
                 .with_error_code(ErrorCodes::MaxSize)
                 .validate() {
                     Ok(_) => Ok(body),
-                    Err(err) => Err(err),
-                }
+                    Err(err) => Err(err)
+                };
+
+                content_validation
+                    .map(|body| body)
+                    
         })
 }
