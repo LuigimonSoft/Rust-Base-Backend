@@ -10,11 +10,12 @@ pub struct Errorcode {
   pub message: String
 }
 
-#[derive(Hash, Eq, PartialEq, Debug)]
+#[derive(Hash, Eq, PartialEq, Debug, Clone)]
 pub enum ErrorCodes {
     NotNull = 1001,
     NotEmpty = 1002,
-    MaxSize = 1003
+    MaxSize = 1003,
+    Nodeclared = 6000
 }
 
 lazy_static! {
