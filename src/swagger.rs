@@ -8,6 +8,7 @@ use warp::{
     hyper::{Response, StatusCode},
     path::{FullPath, Tail}, Rejection, Reply,
 };
+use std::str::FromStr;
 use std::sync::Arc;
 use utoipa_swagger_ui::Config;
 
@@ -41,9 +42,9 @@ pub async fn serve_swagger(
     let api_base_path = std::env::var("API_BASE").expect("API_BASE must be set");
 
     if full_path.as_str() == format!("/{}/swagger-ui", api_base_path) {
-        return Ok(Box::new(warp::redirect::found(Uri::from_static(
-            "/swagger-ui/",
-        ))));
+        return Ok(Box::new(warp::redirect::found(Uri::from_str(
+            format!("/{}/swagger-ui", api_base_path.clone()).as_str()
+        ).unwrap())));
     }
 
     let path = tail.as_str();
