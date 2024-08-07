@@ -6,6 +6,8 @@ use warp::{http::StatusCode, reject::Reject, Rejection, Reply};
 use serde::Serialize;
 use crate::errors::error_codes::ERROR_CODES;
 use crate::errors::error_codes::ErrorCodes;
+use crate::models::error_response::ErrorResponse;
+use crate::models::error_response::ValidationProblem;
 
 #[derive(Error, Debug)]
 pub enum ApiError {
@@ -23,20 +25,7 @@ pub enum ApiError {
 
 impl Reject for ApiError {}
 
-#[derive(Serialize)]
-pub struct ErrorResponse {
-  pub title:String,
-  pub status:u16,
-  pub instance: Option<String>,
-  pub details: Option<Vec<ValidationProblem>>
-}
 
-#[derive(Debug, Serialize)]
-pub struct ValidationProblem {
-    field: Option<String>,
-    message: String,
-    error_code: u16,
-}
 
 pub async fn handle_rejection(err: Rejection) -> Result<impl Reply, Infallible> {
   let dict = ERROR_CODES.read().unwrap();
