@@ -26,6 +26,7 @@ mod controllers;
 mod errors;
 mod middleware;
 mod validators;
+mod router;
 
 
 #[tokio::main]
