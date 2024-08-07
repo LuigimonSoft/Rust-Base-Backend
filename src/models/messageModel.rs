@@ -6,12 +6,12 @@ pub struct MessageModel {
   pub content: String
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, utoipa::ToSchema)]
 pub struct CreateMessageModelDto{
   pub content:Option<String>
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, utoipa::ToSchema, utoipa::ToResponse)]
 pub struct MessageResponseDto {
   pub id: usize,
   pub content: String

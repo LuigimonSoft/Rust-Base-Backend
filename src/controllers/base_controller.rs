@@ -4,6 +4,7 @@ use crate::services::base_service::BaseService;
 use crate::config::Config;
 use std::sync::Arc;
 use std::convert::Infallible;
+use crate::models::error_response::ErrorResponse;
 
 pub struct BaseController<S: BaseService> {
   service: Arc<S>,
@@ -65,6 +66,16 @@ fn with_service<S: BaseService + Send + Sync + 'static>(
     warp::any().map(move || Arc::clone(&service))
 }
 
+#[utoipa::path(
+    get,
+    path = "/api/v1/messages",
+    tag = "Get all messages",
+    responses(
+        (status = 200, body = Vec<MessageResponseDto>),
+        (status = 400, description="Bad request", body = ErrorResponse),
+        (status = 500, body = ErrorResponse)
+    )
+)]
 async fn handle_get_messages<S: BaseService + Send + Sync>(
     service: Arc<S>,
 ) -> Result<impl warp::Reply, warp::Rejection> {
@@ -79,6 +90,18 @@ async fn handle_get_messages<S: BaseService + Send + Sync>(
     Ok(warp::reply::json(&response))
 }
 
+#[utoipa::path(
+    post,
+    path = "/api/v1/messages",
+    tag = "Create a message",
+    responses(
+        (status = 200, body = MessageResponseDto),
+        (status = 400, description="Bad request", body = ErrorResponse),
+        (status = 500, body = ErrorResponse)
+    ),
+    request_body(content = CreateMessageModelDto, description = "Message to create", content_type = "application/json")
+    
+)]
 async fn handle_create_message<S: BaseService + Send + Sync>(
     dto: CreateMessageModelDto,
     service: Arc<S>,
@@ -91,11 +114,24 @@ async fn handle_create_message<S: BaseService + Send + Sync>(
     Ok(warp::reply::json(&response))
 }
 
+#[utoipa::path(
+    get,
+    path = "/api/v1/messages/{message}",
+    tag = "Search messages",
+    responses(
+        (status = 200, body = Vec<MessageResponseDto>),
+        (status = 400, description="Bad request", body = ErrorResponse),
+        (status = 500, body = ErrorResponse)
+    ),
+    params(
+        ("message"= String, description = "Query to search for")
+    )
+)]
 async fn handle_search_messages<S: BaseService + Send + Sync>(
-    query: String,
+    message: String,
     service: Arc<S>,
 ) -> Result<impl warp::Reply, warp::Rejection> {
-    let messages = service.search_messages(&query).await;
+    let messages = service.search_messages(&message).await;
     let response: Vec<MessageResponseDto> = messages
         .into_iter()
         .map(|m| MessageResponseDto {
