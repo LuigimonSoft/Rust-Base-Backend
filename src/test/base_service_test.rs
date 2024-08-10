@@ -1,4 +1,4 @@
-use mockall::{automock, mock};
+use mockall::automock;
 use crate::models::messageModel::MessageModel;
 
 

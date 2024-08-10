@@ -6,7 +6,7 @@ pub struct MessageModel {
   pub content: String
 }
 
-#[derive(Debug, Deserialize, Serialize, utoipa::ToSchema)]
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize, utoipa::ToSchema)]
 pub struct CreateMessageModelDto{
   pub content:Option<String>
 }
