@@ -1,3 +1,5 @@
+use warp::reply::with_status;
+
 use crate::models::messageModel::{CreateMessageModelDto, MessageResponseDto};
 use crate::services::base_service::BaseService;
 use std::sync::Arc;
@@ -32,7 +34,7 @@ pub async fn handle_get_messages<S: BaseService + Send + Sync>(
     path = "/api/v1/messages",
     tag = "Create a message",
     responses(
-        (status = 200, body = MessageResponseDto),
+        (status = 201, body = MessageResponseDto),
         (status = 400, description="Bad request", body = ErrorResponse),
         (status = 500, body = ErrorResponse)
     ),
@@ -48,7 +50,7 @@ pub async fn handle_create_message<S: BaseService + Send + Sync>(
         id: message.id,
         content: message.content,
     };
-    Ok(warp::reply::json(&response))
+    Ok(with_status(warp::reply::json(&response), warp::http::StatusCode::CREATED))
 }
 
 #[utoipa::path(

@@ -45,16 +45,18 @@ pub async fn handle_rejection(err: Rejection) -> Result<impl Reply, Infallible> 
       },
       ApiError::MultipleErrors(errors, field, instance) => {
         let mut validation_problems: Option<Vec<ValidationProblem>> = Some(vec![]);
+        let mut status_code: u16 = 0;
         if let Some(error_list) = errors {
-        for code in error_list {
-          if let Some(errorcode) = dict.get(code){
-            if let Some(ref mut problems) = validation_problems {
-              problems.push(ValidationProblem {field: field.clone(), message: errorcode.message.clone(), error_code: errorcode.code});
-            }
+          for code in error_list {
+            if let Some(errorcode) = dict.get(code){
+              status_code = errorcode.status_code.as_u16();
+              if let Some(ref mut problems) = validation_problems {
+                problems.push(ValidationProblem {field: field.clone(), message: errorcode.message.clone(), error_code: errorcode.code});
+              }
+            } 
           }
         }
-      }
-        ErrorResponse { title: e.to_string(), status: StatusCode::NOT_FOUND.as_u16(), instance: instance.clone(), details: validation_problems}
+        ErrorResponse { title: e.to_string(), status: status_code, instance: instance.clone(), details: validation_problems}
       }
     }
    } else {
