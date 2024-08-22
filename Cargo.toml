@@ -1,5 +1,5 @@
 [package]
-name = "Rust-Base-Backend"
+name = "rust-base-backend"
 version = "0.1.0"
 edition = "2021"
 
@@ -16,3 +16,9 @@ utoipa = "4"
 utoipa-swagger-ui = "7"
 utoipauto = "0.1.12"
 mockall = "0.13"
+once_cell = "1.8"
+
+[dev-dependencies]
+reqwest = { version = "0.12", features = ["json"] }
+tokio = { version = "1.38.1", features = ["full", "test-util"] }
+once_cell = "1.8"
