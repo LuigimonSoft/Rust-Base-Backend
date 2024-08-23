@@ -13,7 +13,7 @@ impl TestServer {
         let (shutdown, base_url) = run_server().await;
 
         let _keep_alive = task::spawn(async move {
-            sleep(Duration::from_secs(120)).await;
+            sleep(Duration::from_secs(240)).await;
         });
         TestServer {
             shutdown: Some(shutdown),
