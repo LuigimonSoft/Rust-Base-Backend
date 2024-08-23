@@ -1,4 +1,6 @@
 use crate::server::run_server;
+use tokio::time::{sleep, Duration};
+use tokio::task;
 
 struct TestServer {
   shutdown: Option<tokio::sync::oneshot::Sender<()>>,
@@ -9,6 +11,10 @@ impl TestServer {
   async fn new() -> Self {
     dotenv::dotenv().ok();
     let (shutdown, base_url) =run_server().await;
+
+    let _keep_alive = task::spawn(async move {
+      sleep(Duration::from_secs(60)).await;
+    });
     TestServer { 
       shutdown: Some(shutdown),
       base_url 
