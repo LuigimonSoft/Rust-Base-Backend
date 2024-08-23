@@ -13,7 +13,7 @@ impl TestServer {
         let (shutdown, base_url) = run_server().await;
 
         let _keep_alive = task::spawn(async move {
-            sleep(Duration::from_secs(240)).await;
+            sleep(Duration::from_secs(360)).await;
         });
         TestServer {
             shutdown: Some(shutdown),
@@ -55,17 +55,17 @@ mod test {
         Arc::clone(server_lock.as_ref().unwrap())
     }
 
+    fn build_address(endpoint: &str) -> String {
+      dotenv().ok();
+      let config = Arc::new(config::Config::from_env());
+      format!("http://localhost:{}/{}/{}", config.port, config.api_base, endpoint)
+    }
+
     #[tokio::test]
     async fn test_get_messages_valid() {
         let server = initialize_server().await;
 
-        dotenv().ok();
-        let config = Arc::new(config::Config::from_env());
-        let address = format!(
-            "http://localhost:{}/{}/messages",
-            config.port, config.api_base
-        );
-
+        let address = build_address("messages");
         let client = reqwest::Client::new();
         let response = client.get(address).send().await.unwrap();
 
@@ -83,11 +83,7 @@ mod test {
 
         dotenv().ok();
         let config = Arc::new(config::Config::from_env());
-        let address = format!(
-            "http://localhost:{}/{}/messages",
-            config.port, config.api_base
-        );
-
+        let address = build_address("messages");
         let client = reqwest::Client::new();
         let response = client
             .post(address)
@@ -113,11 +109,7 @@ mod test {
 
         dotenv().ok();
         let config = Arc::new(config::Config::from_env());
-        let address = format!(
-            "http://localhost:{}/{}/messages",
-            config.port, config.api_base
-        );
-
+        let address = build_address("messages");
         let client = reqwest::Client::new();
         let response = client
             .post(address.clone())
@@ -149,11 +141,7 @@ mod test {
 
         dotenv().ok();
         let config = Arc::new(config::Config::from_env());
-        let address = format!(
-            "http://localhost:{}/{}/messages",
-            config.port, config.api_base
-        );
-
+        let address = build_address("messages");
         let client = reqwest::Client::new();
 
         // null test
@@ -176,11 +164,7 @@ mod test {
 
         dotenv().ok();
         let config = Arc::new(config::Config::from_env());
-        let address = format!(
-            "http://localhost:{}/{}/messages",
-            config.port, config.api_base
-        );
-
+        let address = build_address("messages");
         let client = reqwest::Client::new();
 
         // Empty test
@@ -206,11 +190,7 @@ mod test {
 
         dotenv().ok();
         let config = Arc::new(config::Config::from_env());
-        let address = format!(
-            "http://localhost:{}/{}/messages",
-            config.port, config.api_base
-        );
-
+        let address = build_address("messages");
         let client = reqwest::Client::new();
 
         // More than 32 characters test
