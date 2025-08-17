@@ -6,6 +6,7 @@ Rust-Base-Backend is a foundational backend project written in Rust, designed wi
 ## Features
 - Modular and scalable architecture
 - RESTful API setup
+- Static file serving from the `public` directory
 - Docker support for containerization
 - Middleware for parameter validation
 - Error handling conforming to RFC 7807

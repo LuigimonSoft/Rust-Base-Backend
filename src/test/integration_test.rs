@@ -1,209 +1,180 @@
 use crate::server::run_server;
-use tokio::task;
 use tokio::time::{sleep, Duration};
+use tokio::sync::oneshot;
+use crate::config;
+use crate::errors::error_codes::ErrorCodes;
+use dotenv::dotenv;
+use serde_json::Value;
+use std::sync::Arc;
 
-struct TestServer {
-    shutdown: Option<tokio::sync::oneshot::Sender<()>>,
-    base_url: String,
+async fn spawn_server() -> oneshot::Sender<()> {
+    let (shutdown, _base) = run_server().await;
+    // give the server time to start
+    sleep(Duration::from_millis(100)).await;
+    shutdown
 }
 
-impl TestServer {
-    async fn new() -> Self {
-        dotenv::dotenv().ok();
-        let (shutdown, base_url) = run_server().await;
-
-        let _keep_alive = task::spawn(async move {
-            sleep(Duration::from_secs(360)).await;
-        });
-        TestServer {
-            shutdown: Some(shutdown),
-            base_url,
-        }
-    }
+fn build_address(endpoint: &str) -> String {
+    dotenv().ok();
+    let config = Arc::new(config::Config::from_env());
+    format!("http://localhost:{}/{}/{}", config.port, config.api_base, endpoint)
 }
 
-impl Drop for TestServer {
-    fn drop(&mut self) {
-        if let Some(shutdown) = self.shutdown.take() {
-            let _ = shutdown.send(());
-        }
-    }
+fn build_static_address(path: &str) -> String {
+    dotenv().ok();
+    let config = Arc::new(config::Config::from_env());
+    format!("http://localhost:{}/{}", config.port, path)
 }
 
-#[cfg(test)]
-mod test {
-    use super::TestServer;
-    use crate::config;
-    use crate::errors::error_codes::ErrorCodes;
-    use dotenv::dotenv;
-    use once_cell::sync::Lazy;
-    use reqwest;
-    use serde_json::Value;
-    use std::sync::Arc;
-    use tokio::sync::Mutex;
+#[tokio::test]
+async fn test_get_messages_valid() {
+    let shutdown = spawn_server().await;
 
-    static SERVER: Lazy<Mutex<Option<Arc<TestServer>>>> = Lazy::new(|| Mutex::new(None));
+    let address = build_address("messages");
+    let client = reqwest::Client::new();
+    let response = client.get(address).send().await.unwrap();
 
-    async fn initialize_server() -> Arc<TestServer> {
-        let mut server_lock = SERVER.lock().await;
+    assert_eq!(response.status(), 200);
 
-        if server_lock.is_none() {
-            let server = TestServer::new().await;
-            *server_lock = Some(Arc::new(server));
-        }
+    let body: Value = response.json().await.unwrap();
+    assert!(body.is_array());
 
-        Arc::clone(server_lock.as_ref().unwrap())
-    }
+    let _ = shutdown.send(());
+}
 
-    fn build_address(endpoint: &str) -> String {
-      dotenv().ok();
-      let config = Arc::new(config::Config::from_env());
-      format!("http://localhost:{}/{}/{}", config.port, config.api_base, endpoint)
-    }
+#[tokio::test]
+async fn test_create_message_valid() {
+    let shutdown = spawn_server().await;
+    let text_expected = "Hello, world!";
 
-    #[tokio::test]
-    async fn test_get_messages_valid() {
-        let server = initialize_server().await;
+    let address = build_address("messages");
+    let client = reqwest::Client::new();
+    let response = client
+        .post(address.clone())
+        .json(&serde_json::json!({
+            "content": text_expected
+        }))
+        .send()
+        .await
+        .unwrap();
 
-        let address = build_address("messages");
-        let client = reqwest::Client::new();
-        let response = client.get(address).send().await.unwrap();
+    assert_eq!(response.status(), 201);
 
-        assert_eq!(response.status(), 200);
+    let body: Value = response.json().await.unwrap();
+    assert_eq!(body["content"], text_expected);
 
-        let body: Value = response.json().await.unwrap();
+    let _ = shutdown.send(());
+}
 
-        assert!(body.is_array());
-    }
+#[tokio::test]
+async fn test_search_message_valid() {
+    let shutdown = spawn_server().await;
+    let text_expected = "Text to search";
 
-    #[tokio::test]
-    async fn test_create_message_valid() {
-        let server = initialize_server().await;
-        let text_expected = "Hello, world!";
+    let address = build_address("messages");
+    let client = reqwest::Client::new();
+    let response = client
+        .post(address.clone())
+        .json(&serde_json::json!({
+            "content": text_expected
+        }))
+        .send()
+        .await
+        .unwrap();
 
-        dotenv().ok();
-        let config = Arc::new(config::Config::from_env());
-        let address = build_address("messages");
-        let client = reqwest::Client::new();
-        let response = client
-            .post(address)
-            .json(&serde_json::json!({
-              "content": text_expected
-            }))
-            .send()
-            .await
-            .unwrap();
+    assert_eq!(response.status(), 201);
 
-        assert_eq!(response.status(), 201);
+    let response = client
+        .get(format!("{}/{}", address, "Text"))
+        .send()
+        .await
+        .unwrap();
 
-        let body: Value = response.json().await.unwrap();
+    assert_eq!(response.status(), 200);
 
-        assert_eq!(body["content"], text_expected);
-    }
+    let body: Value = response.json().await.unwrap();
+    assert_eq!(body[0]["content"], text_expected);
 
-    #[tokio::test]
-    async fn test_search_message_valid() {
-        let server = initialize_server().await;
+    let _ = shutdown.send(());
+}
 
-        let text_expected = "Text to search";
+#[tokio::test]
+async fn test_create_message_invalid_null() {
+    let shutdown = spawn_server().await;
 
-        dotenv().ok();
-        let config = Arc::new(config::Config::from_env());
-        let address = build_address("messages");
-        let client = reqwest::Client::new();
-        let response = client
-            .post(address.clone())
-            .json(&serde_json::json!({
-              "content": text_expected
-            }))
-            .send()
-            .await
-            .unwrap();
+    let address = build_address("messages");
+    let client = reqwest::Client::new();
 
-        assert_eq!(response.status(), 201);
+    let response = client
+        .post(address.clone())
+        .json(&serde_json::json!({
+            "content": null
+        }))
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(response.status(), 400);
+    let body: Value = response.json().await.unwrap();
+    assert_eq!(body["details"][0]["error_code"], ErrorCodes::NotNull as u16);
 
-        let response = client
-            .get(format!("{}/{}", address.clone(), "Text"))
-            .send()
-            .await
-            .unwrap();
+    let _ = shutdown.send(());
+}
 
-        assert_eq!(response.status(), 200);
+#[tokio::test]
+async fn test_create_message_invalid_empty() {
+    let shutdown = spawn_server().await;
 
-        let body: Value = response.json().await.unwrap();
+    let address = build_address("messages");
+    let client = reqwest::Client::new();
 
-        assert_eq!(body[0]["content"], text_expected);
-    }
+    let response = client
+        .post(address.clone())
+        .json(&serde_json::json!({
+            "content": ""
+        }))
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(response.status(), 400);
+    let body: Value = response.json().await.unwrap();
+    assert_eq!(body["details"][0]["error_code"], ErrorCodes::NotEmpty as u16);
 
-    #[tokio::test]
-    async fn test_create_message_invalid_null() {
-        let server = initialize_server().await;
+    let _ = shutdown.send(());
+}
 
-        dotenv().ok();
-        let config = Arc::new(config::Config::from_env());
-        let address = build_address("messages");
-        let client = reqwest::Client::new();
+#[tokio::test]
+async fn test_create_message_invalid_maxsize() {
+    let shutdown = spawn_server().await;
 
-        // null test
-        let response = client
-            .post(address.clone())
-            .json(&serde_json::json!({
-              "content": null
-            }))
-            .send()
-            .await
-            .unwrap();
-        assert_eq!(response.status(), 400);
-        let body: Value = response.json().await.unwrap();
-        assert_eq!(body["details"][0]["error_code"], ErrorCodes::NotNull as u16);
-    }
+    let address = build_address("messages");
+    let client = reqwest::Client::new();
 
-    #[tokio::test]
-    async fn test_create_message_invalid_empty() {
-        let server = initialize_server().await;
+    let response = client
+        .post(address.clone())
+        .json(&serde_json::json!({
+            "content": "This is a very long text that is more than 32 characters"
+        }))
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(response.status(), 400);
+    let body: Value = response.json().await.unwrap();
+    assert_eq!(body["details"][0]["error_code"], ErrorCodes::MaxSize as u16);
 
-        dotenv().ok();
-        let config = Arc::new(config::Config::from_env());
-        let address = build_address("messages");
-        let client = reqwest::Client::new();
+    let _ = shutdown.send(());
+}
 
-        // Empty test
-        let response = client
-            .post(address.clone())
-            .json(&serde_json::json!({
-              "content": ""
-            }))
-            .send()
-            .await
-            .unwrap();
-        assert_eq!(response.status(), 400);
-        let body: Value = response.json().await.unwrap();
-        assert_eq!(
-            body["details"][0]["error_code"],
-            ErrorCodes::NotEmpty as u16
-        );
-    }
+#[tokio::test]
+async fn test_static_file_serving() {
+    let shutdown = spawn_server().await;
 
-    #[tokio::test]
-    async fn test_create_message_invalid_maxsize() {
-        let server = initialize_server().await;
+    let client = reqwest::Client::new();
 
-        dotenv().ok();
-        let config = Arc::new(config::Config::from_env());
-        let address = build_address("messages");
-        let client = reqwest::Client::new();
+    let address = build_static_address("index.html");
+    let response = client.get(address).send().await.unwrap();
+    assert_eq!(response.status(), 200);
+    let body = response.text().await.unwrap();
+    assert!(body.contains("Static file served"));
 
-        // More than 32 characters test
-        let response = client
-            .post(address.clone())
-            .json(&serde_json::json!({
-              "content": "This is a very long text that is more than 32 characters"
-            }))
-            .send()
-            .await
-            .unwrap();
-        assert_eq!(response.status(), 400);
-        let body: Value = response.json().await.unwrap();
-        assert_eq!(body["details"][0]["error_code"], ErrorCodes::MaxSize as u16);
-    }
+    let _ = shutdown.send(());
 }

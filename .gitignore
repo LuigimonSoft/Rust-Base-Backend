@@ -20,3 +20,5 @@ Cargo.lock
 
 #enviroment variables
 .env
+# swagger ui
+swagger-ui.zip
