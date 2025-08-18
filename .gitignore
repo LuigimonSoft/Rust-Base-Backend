@@ -21,6 +21,7 @@ Cargo.lock
 #enviroment variables
 .env
 
-# Swagger UI assets
-swagger-ui.zip
+# MacOs Finder files
+.DS_Store
+._*
 
