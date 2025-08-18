@@ -3,6 +3,7 @@ use crate::services::base_service::BaseService;
 use crate::config::Config;
 use std::sync::Arc;
 use std::convert::Infallible;
+use warp::Rejection;
 use crate::controllers::base_controller::{handle_get_messages, handle_create_message, handle_search_messages};
 
 pub struct Router<S: BaseService> {
@@ -19,7 +20,7 @@ impl<S: BaseService + Send + Sync + 'static> Router<S> {
   }
 
 
-pub fn routes(&self) -> impl Filter<Extract = impl warp::Reply, Error = Infallible> + Clone {
+pub fn routes(&self) -> impl Filter<Extract = impl warp::Reply, Error = Rejection> + Clone {
     let service = self.service.clone();
     let api_base = self.config.api_base.trim_matches('/').to_string();
     let api_segments: Vec<String> = api_base.split('/').map(|s| s.to_string()).collect();
@@ -55,7 +56,6 @@ pub fn routes(&self) -> impl Filter<Extract = impl warp::Reply, Error = Infallib
         get_messages
             .or(add_message)
             .or(search_messages)
-            .recover(crate::errors::handle_rejection)
   }
 }
 

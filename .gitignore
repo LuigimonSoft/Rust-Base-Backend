@@ -20,3 +20,8 @@ Cargo.lock
 
 #enviroment variables
 .env
+
+# MacOs Finder files
+.DS_Store
+._*
+
