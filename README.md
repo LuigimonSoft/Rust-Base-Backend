@@ -6,6 +6,7 @@ Rust-Base-Backend is a foundational backend project written in Rust, designed wi
 ## Features
 - Modular and scalable architecture
 - RESTful API setup
+- Static file serving from the `public` directory
 - Docker support for containerization
 - Middleware for parameter validation
 - Error handling conforming to RFC 7807
@@ -169,6 +170,8 @@ The project integrates Swagger for API documentation using OpenAPI. This allows 
 
 #### Enabling Swagger
 To enable Swagger documentation in the project, ensure that the necessary dependencies are included and configured to generate the OpenAPI specification, which can then be served and viewed using tools like Swagger UI.
+
+The `utoipa-swagger-ui` crate downloads the Swagger UI assets at build time. Ensure network access is available, or provide an alternate archive URL via the `SWAGGER_UI_DOWNLOAD_URL` environment variable before running `cargo build` or `cargo test`.
 
 ## Getting Started
 
