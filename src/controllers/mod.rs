@@ -1,4 +1,5 @@
 pub mod base_controller;
+pub mod auth_controller;
 
 use warp::Rejection;
 use std::sync::Arc;

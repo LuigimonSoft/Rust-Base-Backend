@@ -29,18 +29,32 @@ impl Reject for ApiError {}
 
 pub async fn handle_rejection(err: Rejection) -> Result<impl Reply, Infallible> {
   let dict = ERROR_CODES.read().unwrap();
+  
+  // Handle authentication errors
+  if let Some(_) = err.find::<crate::middleware::auth_middleware::AuthError>() {
+    let error_response = ErrorResponse {
+      title: "Unauthorized".to_string(),
+      status: StatusCode::UNAUTHORIZED.as_u16(),
+      instance: None,
+      detail: "Authentication failed".to_string(),
+      details: None,
+    };
+    let json = warp::reply::json(&error_response);
+    return Ok(warp::reply::with_status(json, StatusCode::UNAUTHORIZED));
+  }
+
   let errors: ErrorResponse = if err.is_not_found() {
-    ErrorResponse { title: "Not Found".to_string(), status: StatusCode::NOT_FOUND.as_u16(), instance: None, details: None}
+    ErrorResponse { title: "Not Found".to_string(), status: StatusCode::NOT_FOUND.as_u16(), instance: None, detail: "Resource not found".to_string(), details: None}
   } else if let Some(e) = err.find::<ApiError>() {
     match  e {
-      ApiError::NotFound => ErrorResponse { title: e.to_string(), status: StatusCode::NOT_FOUND.as_u16(), instance: None, details: None},
-      ApiError::BadRequest(details, code) => ErrorResponse { title: "Bad request".to_string(), status: StatusCode::BAD_REQUEST.as_u16(), instance: None, details: Some(vec![ValidationProblem {field: None, message: details.clone(), error_code: code.clone()}])},
-      ApiError::InternalServerError => ErrorResponse { title: "Internal server error".to_string(), status: StatusCode::INTERNAL_SERVER_ERROR.as_u16(), instance: None, details: Some(vec![ValidationProblem {field: None, message: e.to_string(), error_code: 0}])},
+      ApiError::NotFound => ErrorResponse { title: e.to_string(), status: StatusCode::NOT_FOUND.as_u16(), instance: None, detail: e.to_string(), details: None},
+      ApiError::BadRequest(details, code) => ErrorResponse { title: "Bad request".to_string(), status: StatusCode::BAD_REQUEST.as_u16(), instance: None, detail: details.clone(), details: Some(vec![ValidationProblem {field: None, message: details.clone(), error_code: code.clone()}])},
+      ApiError::InternalServerError => ErrorResponse { title: "Internal server error".to_string(), status: StatusCode::INTERNAL_SERVER_ERROR.as_u16(), instance: None, detail: e.to_string(), details: Some(vec![ValidationProblem {field: None, message: e.to_string(), error_code: 0}])},
       ApiError::ErrorCode(code) => {
         if let Some(errorcode) = dict.get(code){
-          ErrorResponse { title: errorcode.message.clone(), status: errorcode.status_code.as_u16(), instance: None, details: Some(vec![ValidationProblem {field: None, message: errorcode.message.clone(), error_code: errorcode.code}])}//(errorcode.status_code, errorcode.code, errorcode.message.to_string())
+          ErrorResponse { title: errorcode.message.clone(), status: errorcode.status_code.as_u16(), instance: None, detail: errorcode.message.clone(), details: Some(vec![ValidationProblem {field: None, message: errorcode.message.clone(), error_code: errorcode.code}])}//(errorcode.status_code, errorcode.code, errorcode.message.to_string())
         } else {
-          ErrorResponse { title: "Internal server error".to_string(), status: StatusCode::INTERNAL_SERVER_ERROR.as_u16(), instance: None, details: Some(vec![ValidationProblem {field: None, message: e.to_string(), error_code: 0}])}
+          ErrorResponse { title: "Internal server error".to_string(), status: StatusCode::INTERNAL_SERVER_ERROR.as_u16(), instance: None, detail: e.to_string(), details: Some(vec![ValidationProblem {field: None, message: e.to_string(), error_code: 0}])}
         }  
       },
       ApiError::MultipleErrors(errors, field, instance) => {
@@ -56,11 +70,11 @@ pub async fn handle_rejection(err: Rejection) -> Result<impl Reply, Infallible> 
             } 
           }
         }
-        ErrorResponse { title: e.to_string(), status: status_code, instance: instance.clone(), details: validation_problems}
+        ErrorResponse { title: e.to_string(), status: status_code, instance: instance.clone(), detail: e.to_string(), details: validation_problems}
       }
     }
    } else {
-      ErrorResponse { title: "Internal server error".to_string(), status: StatusCode::INTERNAL_SERVER_ERROR.as_u16(), instance: None, details: None}       
+      ErrorResponse { title: "Internal server error".to_string(), status: StatusCode::INTERNAL_SERVER_ERROR.as_u16(), instance: None, detail: "Internal server error".to_string(), details: None}       
    };
 
    let json = warp::reply::json(&errors);

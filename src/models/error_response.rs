@@ -5,6 +5,7 @@ pub struct ErrorResponse {
   pub title:String,
   pub status:u16,
   pub instance: Option<String>,
+  pub detail: String,
   pub details: Option<Vec<ValidationProblem>>
 }
 

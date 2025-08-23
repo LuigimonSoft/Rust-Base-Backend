@@ -1,7 +1,8 @@
 use utoipa::OpenApi;
+use utoipa::openapi::security::{ApiKey, ApiKeyValue, SecurityScheme};
 use crate::models::messageModel::{CreateMessageModelDto, MessageResponseDto};
 use crate::models::error_response::{ErrorResponse, ValidationProblem};
-use utoipauto::utoipauto;
+use crate::models::auth_model::{LoginRequest, TokenResponse};
 
 use warp::{
     http::Uri,
@@ -12,11 +13,15 @@ use std::str::FromStr;
 use std::sync::Arc;
 use utoipa_swagger_ui::Config;
 
-#[utoipauto(
-    paths = "./src/controllers"
-)]
 #[derive(OpenApi)]
 #[openapi(
+    paths(
+        crate::controllers::base_controller::handle_get_messages,
+        crate::controllers::base_controller::handle_create_message,
+        crate::controllers::base_controller::handle_search_messages,
+        crate::controllers::auth_controller::handle_login,
+        crate::controllers::auth_controller::handle_protected_test
+    ),
     info(
         title = "Rust Base Backend API ",
         version = "1.0.0",
@@ -27,7 +32,9 @@ use utoipa_swagger_ui::Config;
             CreateMessageModelDto,
             MessageResponseDto,
             ErrorResponse,
-            ValidationProblem
+            ValidationProblem,
+            LoginRequest,
+            TokenResponse
         )
     )
 )]

@@ -5,6 +5,8 @@ use std::sync::Arc;
 use std::convert::Infallible;
 use warp::Rejection;
 use crate::controllers::base_controller::{handle_get_messages, handle_create_message, handle_search_messages};
+use crate::controllers::auth_controller::{handle_login, handle_protected_test};
+use crate::middleware::auth_middleware::with_auth;
 
 pub struct Router<S: BaseService> {
   service: Arc<S>,
@@ -53,9 +55,28 @@ pub fn routes(&self) -> impl Filter<Extract = impl warp::Reply, Error = Rejectio
             .and(with_service(Arc::clone(&service)))
             .and_then(handle_search_messages);
 
+    // Authentication routes
+    let login = warp::post()
+        .and(api_path.clone())
+        .and(warp::path("auth"))
+        .and(warp::path("login"))
+        .and(warp::path::end())
+        .and(warp::body::json())
+        .and_then(handle_login);
+
+    let protected_test = warp::get()
+        .and(api_path.clone())
+        .and(warp::path("test"))
+        .and(warp::path("protected"))
+        .and(warp::path::end())
+        .and(with_auth())
+        .and_then(handle_protected_test);
+
         get_messages
             .or(add_message)
             .or(search_messages)
+            .or(login)
+            .or(protected_test)
   }
 }
 
