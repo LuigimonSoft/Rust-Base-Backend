@@ -6,3 +6,4 @@ pub mod static_files_test;
 pub mod auth_repository_tests;
 pub mod auth_service_test;
 pub mod auth_controller_test;
+pub mod protected_controller_test;

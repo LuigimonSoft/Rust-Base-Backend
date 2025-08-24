@@ -1,10 +1,7 @@
 use std::sync::Arc;
-use warp::{http::StatusCode, reply::with_status};
 
 use crate::models::{
-    auth_request::AuthRequestDto,
-    error_response::ErrorResponse,
-    token_model::TokenResponseDto,
+    auth_request::AuthRequestDto, error_response::ErrorResponse, token_model::TokenResponseDto,
 };
 use crate::services::auth_service::AuthService;
 
@@ -31,21 +28,4 @@ pub async fn generate_token<S: AuthService + Send + Sync>(
         Ok(token) => Ok(warp::reply::json(&token)),
         Err(e) => Err(warp::reject::custom(e)),
     }
-}
-
-#[utoipa::path(
-    get,
-    path = "/api/v1/protected",
-    tag = "Protected",
-    security(("api_key" = [])),
-    responses(
-        (status = 200, body = String),
-        (status = 401, description = "Unauthorized", body = ErrorResponse)
-    )
-)]
-pub async fn protected_endpoint() -> Result<impl warp::Reply, warp::Rejection> {
-    Ok(with_status(
-        warp::reply::json(&serde_json::json!({"message": "Top secret"})),
-        StatusCode::OK,
-    ))
 }

@@ -1,5 +1,6 @@
 pub mod auth_controller;
 pub mod base_controller;
+pub mod protected_controller;
 
 use std::convert::Infallible;
 use std::sync::Arc;
@@ -23,17 +24,20 @@ pub fn routes(
 
     let token_repository = InMemoryTokenRepository::new();
     let credential_repository = InMemoryCredentialRepository::new();
-    let auth_service = AuthServiceImpl::new(token_repository, credential_repository);
-    let auth_routes = build_auth_routes(auth_service, Arc::clone(&config));
+    let auth_service = Arc::new(AuthServiceImpl::new(
+        token_repository,
+        credential_repository,
+    ));
+    let auth_routes = build_auth_routes(Arc::clone(&auth_service), Arc::clone(&config));
+    let protected_routes = build_protected_routes(Arc::clone(&auth_service), Arc::clone(&config));
 
-    base_router.or(auth_routes)
+    base_router.or(auth_routes).or(protected_routes)
 }
 
 fn build_auth_routes<S: AuthService + Send + Sync + 'static>(
-    service: S,
+    service: Arc<S>,
     config: Arc<Config>,
 ) -> impl Filter<Extract = impl warp::Reply, Error = Rejection> + Clone {
-    let service = Arc::new(service);
     let api_base = config.api_base.trim_matches('/').to_string();
     let segments: Vec<String> = api_base.split('/').map(|s| s.to_string()).collect();
 
@@ -51,14 +55,27 @@ fn build_auth_routes<S: AuthService + Send + Sync + 'static>(
         .and(warp::body::json())
         .and_then(auth_controller::generate_token);
 
-    let protected = warp::get()
+    auth_token
+}
+
+fn build_protected_routes<S: AuthService + Send + Sync + 'static>(
+    service: Arc<S>,
+    config: Arc<Config>,
+) -> impl Filter<Extract = impl warp::Reply, Error = Rejection> + Clone {
+    let api_base = config.api_base.trim_matches('/').to_string();
+    let segments: Vec<String> = api_base.split('/').map(|s| s.to_string()).collect();
+
+    let mut api_path = warp::path(segments[0].clone()).boxed();
+    for seg in &segments[1..] {
+        api_path = api_path.and(warp::path(seg.clone())).boxed();
+    }
+
+    warp::get()
         .and(api_path.clone())
         .and(warp::path("protected"))
         .and(warp::path::end())
         .and(authorize(Arc::clone(&service)))
-        .and_then(auth_controller::protected_endpoint);
-
-    auth_token.or(protected)
+        .and_then(protected_controller::protected_endpoint)
 }
 
 fn with_auth_service<S: AuthService + Send + Sync + 'static>(

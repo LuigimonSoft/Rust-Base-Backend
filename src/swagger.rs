@@ -26,7 +26,7 @@ use warp::{
         crate::controllers::base_controller::handle_create_message,
         crate::controllers::base_controller::handle_search_messages,
         crate::controllers::auth_controller::generate_token,
-        crate::controllers::auth_controller::protected_endpoint,
+        crate::controllers::protected_controller::protected_endpoint,
     ),
     info(
         title = "Rust Base Backend API ",

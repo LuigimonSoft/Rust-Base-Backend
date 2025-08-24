@@ -1,11 +1,10 @@
 use std::sync::Arc;
 use warp::Reply;
 
-use crate::controllers::auth_controller::{generate_token, protected_endpoint};
+use crate::controllers::auth_controller::generate_token;
 use crate::models::auth_request::AuthRequestDto;
 use crate::repositories::{
-    credentials_repository::InMemoryCredentialRepository,
-    token_repository::InMemoryTokenRepository,
+    credentials_repository::InMemoryCredentialRepository, token_repository::InMemoryTokenRepository,
 };
 use crate::services::auth_service::{AuthService, AuthServiceImpl};
 
@@ -36,10 +35,4 @@ async fn handler_generate_token_invalid_credentials() {
     };
     let result = generate_token(Arc::new(service), request).await;
     assert!(result.is_err());
-}
-
-#[tokio::test]
-async fn handler_protected_endpoint() {
-    let reply = protected_endpoint().await.unwrap().into_response();
-    assert_eq!(reply.status(), 200);
 }
