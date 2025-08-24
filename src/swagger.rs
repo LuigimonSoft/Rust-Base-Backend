@@ -1,22 +1,33 @@
-use utoipa::OpenApi;
-use crate::models::messageModel::{CreateMessageModelDto, MessageResponseDto};
 use crate::models::error_response::{ErrorResponse, ValidationProblem};
-use utoipauto::utoipauto;
-
-use warp::{
-    http::Uri,
-    hyper::{Response, StatusCode},
-    path::{FullPath, Tail}, Rejection, Reply,
+use crate::models::messageModel::{CreateMessageModelDto, MessageResponseDto};
+use crate::models::{auth_request::AuthRequestDto, token_model::TokenResponseDto};
+use utoipa::{
+    openapi::{
+        self,
+        security::{ApiKey, ApiKeyValue, SecurityScheme},
+    },
+    Modify, OpenApi,
 };
+
 use std::str::FromStr;
 use std::sync::Arc;
 use utoipa_swagger_ui::Config;
+use warp::{
+    http::Uri,
+    hyper::{Response, StatusCode},
+    path::{FullPath, Tail},
+    Rejection, Reply,
+};
 
-#[utoipauto(
-    paths = "./src/controllers"
-)]
 #[derive(OpenApi)]
 #[openapi(
+    paths(
+        crate::controllers::base_controller::handle_get_messages,
+        crate::controllers::base_controller::handle_create_message,
+        crate::controllers::base_controller::handle_search_messages,
+        crate::controllers::auth_controller::generate_token,
+        crate::controllers::protected_controller::protected_endpoint,
+    ),
     info(
         title = "Rust Base Backend API ",
         version = "1.0.0",
@@ -26,13 +37,27 @@ use utoipa_swagger_ui::Config;
         schemas(
             CreateMessageModelDto,
             MessageResponseDto,
+            AuthRequestDto,
+            TokenResponseDto,
             ErrorResponse,
             ValidationProblem
         )
-    )
+    ),
+    modifiers(&SecurityAddon)
 )]
 pub struct ApiDoc;
 
+struct SecurityAddon;
+
+impl Modify for SecurityAddon {
+    fn modify(&self, openapi: &mut openapi::OpenApi) {
+        let components = openapi.components.get_or_insert_with(Default::default);
+        components.add_security_scheme(
+            "api_key",
+            SecurityScheme::ApiKey(ApiKey::Header(ApiKeyValue::new("Authorization"))),
+        );
+    }
+}
 
 pub async fn serve_swagger(
     full_path: FullPath,
@@ -42,9 +67,9 @@ pub async fn serve_swagger(
     let api_base_path = std::env::var("API_BASE").expect("API_BASE must be set");
 
     if full_path.as_str() == format!("/{}/swagger-ui", api_base_path) {
-        return Ok(Box::new(warp::redirect::found(Uri::from_str(
-            format!("/{}/swagger-ui", api_base_path.clone()).as_str()
-        ).unwrap())));
+        return Ok(Box::new(warp::redirect::found(
+            Uri::from_str(format!("/{}/swagger-ui", api_base_path.clone()).as_str()).unwrap(),
+        )));
     }
 
     let path = tail.as_str();

@@ -12,6 +12,7 @@ Rust-Base-Backend is a foundational backend project written in Rust, designed wi
 - Error handling conforming to RFC 7807
 - Asynchronous programming with Tokio
 - Swagger integration for API documentation using OpenAPI
+- Secure token-based authentication
 
 ## Architecture
 The project is structured to follow the principles of clean architecture, ensuring separation of concerns and maintainability. The main components include:
@@ -172,6 +173,37 @@ The project integrates Swagger for API documentation using OpenAPI. This allows 
 To enable Swagger documentation in the project, ensure that the necessary dependencies are included and configured to generate the OpenAPI specification, which can then be served and viewed using tools like Swagger UI.
 
 The `utoipa-swagger-ui` crate downloads the Swagger UI assets at build time. Ensure network access is available, or provide an alternate archive URL via the `SWAGGER_UI_DOWNLOAD_URL` environment variable before running `cargo build` or `cargo test`.
+
+### Token Authentication
+Two additional endpoints demonstrate a secure token flow:
+
+- `POST /api/v1/auth/token` – accepts either a username/password or a client_id/client_secret and returns a cryptographically secure, short‑lived token.
+- `GET /api/v1/protected` – returns protected data and requires the token in an `Authorization: Bearer <token>` header.
+
+To test using Swagger UI:
+1. Open `/api/v1/swagger-ui` in the browser.
+2. Execute the `POST /auth/token` endpoint providing credentials, for example:
+
+```json
+{
+  "grant_type": "user",
+  "username": "admin",
+  "password": "password"
+}
+```
+
+or
+
+```json
+{
+  "grant_type": "client",
+  "client_id": "client",
+  "client_secret": "secret"
+}
+```
+
+3. Copy the returned token and click the **Authorize** button in Swagger, entering `Bearer <token>` as the value.
+4. Call `GET /protected`; it will respond only when a valid token is supplied.
 
 ## Getting Started
 

@@ -25,7 +25,7 @@ pub async fn run_server() -> (oneshot::Sender<()>, String) {
 
     let config = Arc::new(config::Config::from_env());
     let config_swagger = Arc::new(Config::from(format!("/{}/api-doc.json", config.api_base)));
-    let routes = controllers::base_routes(Arc::clone(&config));
+    let routes = controllers::routes(Arc::clone(&config));
     let static_files = warp::fs::dir(config.static_dir.clone());
 
     let port: u16 = config.port;

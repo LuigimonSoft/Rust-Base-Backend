@@ -178,3 +178,38 @@ async fn test_static_file_serving() {
 
     let _ = shutdown.send(());
 }
+
+#[tokio::test]
+async fn test_auth_token_and_protected() {
+    let (shutdown, base) = spawn_server().await;
+    let client = reqwest::Client::new();
+
+    let token_addr = build_address(&base, "auth/token");
+    let token_resp = client
+        .post(token_addr)
+        .json(&serde_json::json!({
+            "grant_type": "user",
+            "username": "admin",
+            "password": "password"
+        }))
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(token_resp.status(), 200);
+    let body: Value = token_resp.json().await.unwrap();
+    let token = body["token"].as_str().unwrap();
+
+    let protected_addr = build_address(&base, "protected");
+    let unauth = client.get(protected_addr.clone()).send().await.unwrap();
+    assert_eq!(unauth.status(), 401);
+
+    let auth = client
+        .get(protected_addr)
+        .header("Authorization", format!("Bearer {}", token))
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(auth.status(), 200);
+
+    let _ = shutdown.send(());
+}
