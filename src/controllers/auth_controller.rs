@@ -1,22 +1,28 @@
 use std::sync::Arc;
 use warp::{http::StatusCode, reply::with_status};
 
+use crate::models::auth_request::AuthRequestDto;
 use crate::services::auth_service::AuthService;
 
 #[utoipa::path(
     post,
     path = "/api/v1/auth/token",
     tag = "Authentication",
+    request_body = crate::models::auth_request::AuthRequestDto,
     responses(
         (status = 200, body = crate::models::token_model::TokenResponseDto),
+        (status = 401, body = crate::models::error_response::ErrorResponse),
         (status = 500, body = crate::models::error_response::ErrorResponse)
     )
 )]
 pub async fn generate_token<S: AuthService + Send + Sync>(
     service: Arc<S>,
+    request: AuthRequestDto,
 ) -> Result<impl warp::Reply, warp::Rejection> {
-    let token = service.generate_token().await;
-    Ok(warp::reply::json(&token))
+    match service.generate_token(request).await {
+        Ok(token) => Ok(warp::reply::json(&token)),
+        Err(e) => Err(warp::reject::custom(e)),
+    }
 }
 
 #[utoipa::path(

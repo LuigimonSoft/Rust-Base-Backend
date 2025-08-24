@@ -8,6 +8,7 @@ use warp::{Filter, Rejection};
 use crate::config::Config;
 use crate::errors::ApiError;
 use crate::repositories::base_Repository::InMemoryBaseRepository;
+use crate::repositories::credentials_repository::InMemoryCredentialRepository;
 use crate::repositories::token_repository::InMemoryTokenRepository;
 use crate::router::Router;
 use crate::services::auth_service::{AuthService, AuthServiceImpl};
@@ -21,7 +22,8 @@ pub fn routes(
     let base_router = Router::new(base_service, Arc::clone(&config)).routes();
 
     let token_repository = InMemoryTokenRepository::new();
-    let auth_service = AuthServiceImpl::new(token_repository);
+    let credential_repository = InMemoryCredentialRepository::new();
+    let auth_service = AuthServiceImpl::new(token_repository, credential_repository);
     let auth_routes = build_auth_routes(auth_service, Arc::clone(&config));
 
     base_router.or(auth_routes)
@@ -46,6 +48,7 @@ fn build_auth_routes<S: AuthService + Send + Sync + 'static>(
         .and(warp::path("token"))
         .and(warp::path::end())
         .and(with_auth_service(Arc::clone(&service)))
+        .and(warp::body::json())
         .and_then(auth_controller::generate_token);
 
     let protected = warp::get()

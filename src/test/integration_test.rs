@@ -185,7 +185,16 @@ async fn test_auth_token_and_protected() {
     let client = reqwest::Client::new();
 
     let token_addr = build_address(&base, "auth/token");
-    let token_resp = client.post(token_addr).send().await.unwrap();
+    let token_resp = client
+        .post(token_addr)
+        .json(&serde_json::json!({
+            "grant_type": "user",
+            "username": "admin",
+            "password": "password"
+        }))
+        .send()
+        .await
+        .unwrap();
     assert_eq!(token_resp.status(), 200);
     let body: Value = token_resp.json().await.unwrap();
     let token = body["token"].as_str().unwrap();

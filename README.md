@@ -177,13 +177,32 @@ The `utoipa-swagger-ui` crate downloads the Swagger UI assets at build time. Ens
 ### Token Authentication
 Two additional endpoints demonstrate a secure token flow:
 
-- `POST /api/v1/auth/token` – generates a cryptographically secure, short‑lived token.
+- `POST /api/v1/auth/token` – accepts either a username/password or a client_id/client_secret and returns a cryptographically secure, short‑lived token.
 - `GET /api/v1/protected` – returns protected data and requires the token in an `Authorization: Bearer <token>` header.
 
 To test using Swagger UI:
 1. Open `/api/v1/swagger-ui` in the browser.
-2. Execute the `POST /auth/token` endpoint and copy the returned token.
-3. Click the **Authorize** button in Swagger and enter `Bearer <token>` as the value.
+2. Execute the `POST /auth/token` endpoint providing credentials, for example:
+
+```json
+{
+  "grant_type": "user",
+  "username": "admin",
+  "password": "password"
+}
+```
+
+or
+
+```json
+{
+  "grant_type": "client",
+  "client_id": "client",
+  "client_secret": "secret"
+}
+```
+
+3. Copy the returned token and click the **Authorize** button in Swagger, entering `Bearer <token>` as the value.
 4. Call `GET /protected`; it will respond only when a valid token is supplied.
 
 ## Getting Started

@@ -1,6 +1,6 @@
 use crate::models::error_response::{ErrorResponse, ValidationProblem};
 use crate::models::messageModel::{CreateMessageModelDto, MessageResponseDto};
-use crate::models::token_model::TokenResponseDto;
+use crate::models::{auth_request::AuthRequestDto, token_model::TokenResponseDto};
 use utoipa::{
     openapi::{
         self,
@@ -37,6 +37,7 @@ use warp::{
         schemas(
             CreateMessageModelDto,
             MessageResponseDto,
+            AuthRequestDto,
             TokenResponseDto,
             ErrorResponse,
             ValidationProblem
