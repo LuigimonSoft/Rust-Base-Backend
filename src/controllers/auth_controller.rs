@@ -1,18 +1,26 @@
 use std::sync::Arc;
 use warp::{http::StatusCode, reply::with_status};
 
-use crate::models::auth_request::AuthRequestDto;
+use crate::models::{
+    auth_request::AuthRequestDto,
+    error_response::ErrorResponse,
+    token_model::TokenResponseDto,
+};
 use crate::services::auth_service::AuthService;
 
 #[utoipa::path(
     post,
     path = "/api/v1/auth/token",
     tag = "Authentication",
-    request_body = crate::models::auth_request::AuthRequestDto,
+    request_body(
+        content = AuthRequestDto,
+        description = "User/password or client credentials used to request a token",
+        content_type = "application/json"
+    ),
     responses(
-        (status = 200, body = crate::models::token_model::TokenResponseDto),
-        (status = 401, body = crate::models::error_response::ErrorResponse),
-        (status = 500, body = crate::models::error_response::ErrorResponse)
+        (status = 200, description = "Token generated", body = TokenResponseDto),
+        (status = 401, description = "Unauthorized", body = ErrorResponse),
+        (status = 500, description = "Internal server error", body = ErrorResponse)
     )
 )]
 pub async fn generate_token<S: AuthService + Send + Sync>(
@@ -32,7 +40,7 @@ pub async fn generate_token<S: AuthService + Send + Sync>(
     security(("api_key" = [])),
     responses(
         (status = 200, body = String),
-        (status = 401, description = "Unauthorized", body = crate::models::error_response::ErrorResponse)
+        (status = 401, description = "Unauthorized", body = ErrorResponse)
     )
 )]
 pub async fn protected_endpoint() -> Result<impl warp::Reply, warp::Rejection> {
