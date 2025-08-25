@@ -1,3 +1,4 @@
+#![allow(dead_code, unused_imports, unused_variables)]
 use warp::Reply;
 
 use crate::controllers::protected_controller::protected_endpoint;

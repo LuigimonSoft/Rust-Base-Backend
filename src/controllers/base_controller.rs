@@ -1,8 +1,9 @@
 use warp::reply::with_status;
 
-use crate::models::messageModel::{CreateMessageModelDto, MessageResponseDto};
+use crate::models::message_model::{CreateMessageModelDto, MessageResponseDto};
 use crate::services::base_service::BaseService;
 use std::sync::Arc;
+#[allow(unused_imports)]
 use crate::models::error_response::ErrorResponse;
 
 #[utoipa::path(

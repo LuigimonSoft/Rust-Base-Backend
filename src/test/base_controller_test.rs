@@ -1,5 +1,7 @@
+#![allow(dead_code, unused_imports, unused_variables)]
 use mockall::automock;
-use crate::models::messageModel::{CreateMessageModelDto, MessageModel, MessageResponseDto};
+
+use crate::models::message_model::{CreateMessageModelDto, MessageModel, MessageResponseDto};
 
 #[automock]
 pub trait BaseService: Send + Sync {

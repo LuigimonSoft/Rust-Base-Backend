@@ -4,12 +4,12 @@ use crate::errors::error_codes::ErrorCodes;
 use crate::errors::error_codes::ERROR_CODES;
 use crate::models::error_response::ErrorResponse;
 use crate::models::error_response::ValidationProblem;
-use serde::Serialize;
 use std::convert::Infallible;
 use thiserror::Error;
 use warp::{http::StatusCode, reject::Reject, Rejection, Reply};
 
 #[derive(Error, Debug)]
+#[allow(dead_code)]
 pub enum ApiError {
     #[error("Message not found")]
     NotFound,

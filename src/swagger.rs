@@ -1,5 +1,5 @@
 use crate::models::error_response::{ErrorResponse, ValidationProblem};
-use crate::models::messageModel::{CreateMessageModelDto, MessageResponseDto};
+use crate::models::message_model::{CreateMessageModelDto, MessageResponseDto};
 use crate::models::{auth_request::AuthRequestDto, token_model::TokenResponseDto};
 use utoipa::{
     openapi::{

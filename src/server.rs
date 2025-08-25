@@ -7,18 +7,9 @@ use dotenv::dotenv;
 use std::sync::Arc;
 use tokio::sync::oneshot;
 
-use utoipa::{
-    openapi::security::{ApiKey, ApiKeyValue, SecurityScheme},
-    openapi::Server,
-    Modify, OpenApi,
-};
+use utoipa::OpenApi;
 use utoipa_swagger_ui::Config;
-use warp::{
-    http::Uri,
-    hyper::{Response, StatusCode},
-    path::{FullPath, Tail},
-    Filter, Rejection, Reply,
-};
+use warp::{Filter, Rejection};
 
 pub async fn run_server() -> (oneshot::Sender<()>, String) {
     dotenv().ok();

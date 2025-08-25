@@ -1,3 +1,5 @@
+#![allow(dead_code, unused_imports, unused_variables)]
+
 use crate::models::auth_request::AuthRequestDto;
 use crate::repositories::credentials_repository::InMemoryCredentialRepository;
 use crate::repositories::token_repository::InMemoryTokenRepository;

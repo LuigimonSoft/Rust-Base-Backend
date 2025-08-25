@@ -1,5 +1,6 @@
+#![allow(dead_code, unused_imports, unused_variables)]
 use mockall::automock;
-use crate::models::messageModel::MessageModel;
+use crate::models::message_model::MessageModel;
 
 
 

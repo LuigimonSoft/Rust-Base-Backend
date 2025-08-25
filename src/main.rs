@@ -1,5 +1,4 @@
 
-use std::sync::Arc;
 use crate::server::run_server;
 
 mod config;

@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+#[allow(unused_imports)]
 use crate::models::{
     auth_request::AuthRequestDto, error_response::ErrorResponse, token_model::TokenResponseDto,
 };
