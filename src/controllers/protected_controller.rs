@@ -1,5 +1,6 @@
 use warp::{http::StatusCode, reply::with_status};
 
+#[allow(unused_imports)]
 use crate::models::error_response::ErrorResponse;
 
 #[utoipa::path(

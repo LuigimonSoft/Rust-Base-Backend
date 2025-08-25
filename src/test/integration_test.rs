@@ -1,4 +1,6 @@
+#![allow(dead_code, unused_imports, unused_variables)]
 use crate::config;
+
 use crate::errors::error_codes::ErrorCodes;
 use crate::server::run_server;
 use dotenv::dotenv;

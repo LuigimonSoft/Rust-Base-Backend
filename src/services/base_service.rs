@@ -1,6 +1,6 @@
 use async_trait::async_trait;
-use crate::models::messageModel::{MessageModel, CreateMessageModelDto};
-use crate::repositories::base_Repository::BaseRepository;
+use crate::models::message_model::{MessageModel, CreateMessageModelDto};
+use crate::repositories::base_repository::BaseRepository;
 
 #[async_trait]
 pub trait BaseService: Send + Sync {

@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use crate::models::messageModel::MessageModel;
+use crate::models::message_model::MessageModel;
 use std::sync::{Arc, Mutex};
 
 #[async_trait]

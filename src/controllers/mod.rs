@@ -8,12 +8,12 @@ use warp::{Filter, Rejection};
 
 use crate::config::Config;
 use crate::errors::ApiError;
-use crate::repositories::base_Repository::InMemoryBaseRepository;
+use crate::repositories::base_repository::InMemoryBaseRepository;
 use crate::repositories::credentials_repository::InMemoryCredentialRepository;
 use crate::repositories::token_repository::InMemoryTokenRepository;
 use crate::router::Router;
 use crate::services::auth_service::{AuthService, AuthServiceImpl};
-use crate::services::base_service::{BaseService, BaseServiceImpl};
+use crate::services::base_service::BaseServiceImpl;
 
 pub fn routes(
     config: Arc<Config>,

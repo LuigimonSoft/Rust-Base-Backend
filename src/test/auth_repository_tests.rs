@@ -1,3 +1,5 @@
+#![allow(dead_code, unused_imports, unused_variables)]
+
 use crate::repositories::credentials_repository::{
     CredentialRepository, InMemoryCredentialRepository,
 };

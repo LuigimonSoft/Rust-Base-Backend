@@ -1,3 +1,4 @@
+#![allow(dead_code, unused_imports, unused_variables)]
 use std::sync::Arc;
 use warp::Reply;
 

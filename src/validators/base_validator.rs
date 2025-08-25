@@ -1,5 +1,5 @@
 use warp::{Filter, Rejection};
-use crate::models::messageModel::CreateMessageModelDto;
+use crate::models::message_model::CreateMessageModelDto;
 use crate::errors::error_codes::ErrorCodes;
 use crate::middleware::validator::Rule;
 

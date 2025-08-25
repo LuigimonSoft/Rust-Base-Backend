@@ -1,3 +1,5 @@
+#![allow(dead_code, unused_variables)]
+
 use crate::errors::ApiError;
 use crate::errors::error_codes::ErrorCodes;
 use warp::Rejection;

@@ -1,7 +1,8 @@
+#![allow(dead_code, unused_imports, unused_variables)]
 #[cfg(test)]
 mod tests {
-    use crate::repositories::base_Repository::InMemoryBaseRepository;
-    use crate::repositories::base_Repository::BaseRepository;
+    use crate::repositories::base_repository::InMemoryBaseRepository;
+    use crate::repositories::base_repository::BaseRepository;
 
     #[tokio::test] 
     async fn test_add_message() {
