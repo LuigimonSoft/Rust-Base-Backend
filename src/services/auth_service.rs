@@ -60,7 +60,7 @@ impl<R: TokenRepository + Send + Sync, C: CredentialRepository + Send + Sync> Au
         }
 
         let mut bytes = [0u8; 32];
-        rand::thread_rng().fill_bytes(&mut bytes);
+        rand::rng().fill_bytes(&mut bytes);
         let token = general_purpose::URL_SAFE_NO_PAD.encode(&bytes);
         let hashed = Sha256::digest(token.as_bytes());
         let hashed_hex = hex::encode(hashed);

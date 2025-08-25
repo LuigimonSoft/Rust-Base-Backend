@@ -50,12 +50,19 @@ pub async fn run_server() -> (oneshot::Sender<()>, String) {
         .or(static_files)
         .recover(errors::handle_rejection);
 
-    let (addr, server) =
-        warp::serve(routes).bind_with_graceful_shutdown(([127, 0, 0, 1], port), async {
+    let socket_addr = std::net::SocketAddr::from(([127, 0, 0, 1], port));
+    let listener = tokio::net::TcpListener::bind(socket_addr)
+        .await
+        .expect("failed to bind address");
+    let addr = listener.local_addr().expect("failed to get local addr");
+
+    let server = warp::serve(routes)
+        .incoming(listener)
+        .graceful(async {
             rx.await.ok();
         });
 
-    tokio::spawn(server);
+    tokio::spawn(server.run());
 
     println!("Server starting on port {}", addr.port());
     println!("API base path: /{}", config.api_base);
